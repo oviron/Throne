@@ -1,0 +1,101 @@
+name: oviron release
+on:
+  push:
+    tags:
+      - "*-oviron.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release, e.g. 1.3.2-oviron.1; empty builds without publishing"
+        required: false
+
+jobs:
+  macos-arm64:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
+      DEST: ${{ github.workspace }}/deployment/darwin-arm64
+      DEST_SUFFIX: darwin-arm64
+    steps:
+      - name: Checking out sources
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - name: Install Golang
+        uses: actions/setup-go@v7.0.0
+        with:
+          go-version: "1.27.0"
+          cache-dependency-path: |
+            core/go.sum
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          version: "31.1"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Installing protoc-gen-go
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
+      - name: Build golang parts
+        shell: bash
+        run: |
+          GOOS=darwin GOARCH=arm64 ./script/build_go.sh
+          # deploy_macos.sh takes the core from the tarball the upstream build-go job uploads.
+          mkdir -p download-artifact
+          tar czf download-artifact/artifacts.tgz ./deployment
+      - name: Checking out the web dashboard
+        uses: actions/checkout@v7.0.1
+        with:
+          repository: SagerNet/sing-box-dashboard
+          ref: gh-pages
+          path: dashboard-src
+      - name: Bundling the web dashboard
+        shell: bash
+        run: |
+          rm -rf dashboard-src/.git
+          cp -R dashboard-src/. res/dashboard/
+          test -f res/dashboard/index.html
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4.3.1
+        with:
+          version: "6.11.2"
+          setup-python: true
+          cache: true
+          cache-key-prefix: QtCache-darwin-arm64
+      - name: Generate MakeFile and Build
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ env.TAG }}
+        run: |
+          mkdir build
+          cd build
+          curl -fLso srslist.h "https://raw.githubusercontent.com/throneproj/routeprofiles/rule-set/srslist.h"
+          cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DNKR_PACKAGE_MACOS=1 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.15 -DCMAKE_OSX_ARCHITECTURES=arm64 ..
+          ninja
+          cd ..
+          ./script/deploy_macos.sh
+      - name: Pack
+        shell: bash
+        run: |
+          NAME="Throne-${TAG:-${GITHUB_SHA::8}}-macos-arm64.zip"
+          mkdir -p .pack/Throne out
+          mv "$DEST/Throne.app" .pack/Throne/
+          rm -rf .pack/Throne/Throne.app/Contents/MacOS/Throne.dSYM
+          (cd .pack && zip -q --symlinks -r "../out/$NAME" Throne)
+          (cd out && shasum -a 256 "$NAME" > SHA256SUMS)
+          cat out/SHA256SUMS
+      - name: Uploading Artifact
+        uses: actions/upload-artifact@v7.0.1
+        with:
+          name: Throne-${{ github.sha }}-macos-arm64
+          path: out
+          compression-level: 0
+      - name: Release
+        if: env.TAG != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$TAG" out/* --verify-tag --title "$TAG" \
+            --notes "Throne ${TAG%%-oviron.*} for macOS arm64 with a Firefox 158 TLS fingerprint. See [FORK.md](https://github.com/oviron/Throne/blob/$TAG/FORK.md)."
