@@ -40,13 +40,24 @@ Hysteria2 failure above; use `1.3.2-oviron.2` or later.
 
 ## New upstream release
 
+`OLD` is the upstream tag the branch sits on, `NEW` the new one. Upstream bumps
+its dependencies in every release, so the rebase stops on `core/go.mod` and
+`core/go.sum`: take upstream's files and apply the replace again, with the
+latest `v*-refraction.*` tag of oviron/utls.
+
 ```sh
+export GOTOOLCHAIN=go1.27.0   # the Go of the release workflow
 git fetch upstream --tags
 git rebase --onto NEW OLD oviron
+git checkout NEW -- core/go.mod core/go.sum
 # tidy sees the gRPC imports only with core/gen generated
 (cd core/gen && protoc -I . --go_out=. --go-grpc_out=. libcore.proto)
-(cd core && go mod tidy)
-git tag NEW-oviron.1 && git push origin oviron NEW-oviron.1
+(cd core && go mod edit -go=1.27 \
+  -replace github.com/refraction-networking/utls=github.com/oviron/utls@v1.8.3-refraction.1 &&
+  go mod tidy)
+git add core/go.mod core/go.sum && git rebase --continue
+git push --force-with-lease origin oviron
+git tag NEW-oviron.1 && git push origin NEW-oviron.1
 ```
 
 When upstream moves to a uTLS release with Firefox 158 of its own, the fork is
