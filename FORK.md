@@ -20,8 +20,8 @@ and carries X25519MLKEM768, so Xray REALITY servers from 26.9 on accept it.
 sing-box keeps the stock `github.com/metacubex/utls`, so sing-box-style profiles
 send upstream fingerprints (`firefox` is Firefox 120). Replacing it with the
 oviron/utls branch built on MetaCubeX v1.9.0 broke Hysteria2 (QUIC fails with
-`missing initial_source_connection_id`) and crashed the core on exit, and the
-sing-box REALITY client removes X25519MLKEM768 from any fingerprint anyway.
+`missing initial_source_connection_id`), and the sing-box REALITY client removes
+X25519MLKEM768 from any fingerprint anyway.
 
 Two more changes: the updater checks this repository's releases, and
 `.github/workflows/oviron-release.yml` builds macOS arm64 only. The upstream
@@ -34,9 +34,6 @@ Branch `oviron` sits on an upstream release tag. A fork release is tagged
 `Throne-<tag>-macos-arm64.zip` with `SHA256SUMS` and publishes the release. The
 updater compares only the upstream part of the version, so it offers a new
 upstream base but not the next `-oviron.<n>` of the same base.
-
-`1.3.2-oviron.1` also replaced the sing-box utls and is affected by the
-Hysteria2 failure above; use `1.3.2-oviron.2` or later.
 
 ## New upstream release
 
