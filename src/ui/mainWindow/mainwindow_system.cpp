@@ -280,7 +280,9 @@ constexpr int kReleaseStage = 4;
 
 std::optional<Version> parseVersion(const QString &text) {
     static const QRegularExpression pattern(QStringLiteral(R"(^v?(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)\.?(\d*))?$)"));
-    const auto match = pattern.match(text.trimmed());
+    // oviron/Throne tags are <upstream>-oviron.<n>; only the upstream part is compared.
+    static const QRegularExpression forkSuffix(QStringLiteral(R"(-oviron\.\d+$)"));
+    const auto match = pattern.match(text.trimmed().remove(forkSuffix));
     if (!match.hasMatch()) return std::nullopt;
     const auto stage = match.captured(4);
     const int stageRank = stage.isEmpty() ? kReleaseStage
@@ -439,7 +441,7 @@ void MainWindow::CheckUpdate() {
     // Releases carry no checksum or signature, so TLS is all that vouches for the download URL and the archive.
     HttpGetOptions options;
     options.strictTls = true;
-    auto resp = NetworkRequestHelper::HttpGet("https://api.github.com/repos/throneproj/Throne/releases", options);
+    auto resp = NetworkRequestHelper::HttpGet("https://api.github.com/repos/oviron/Throne/releases", options);
     if (!resp.error.isEmpty()) {
         runOnUiThread([=,this] {
             MessageBoxWarning(QObject::tr("Update"), QObject::tr("Requesting update error: %1").arg(resp.error + "\n" + resp.data));
@@ -474,7 +476,7 @@ void MainWindow::CheckUpdate() {
 
     options.headers = {{"Accept", "application/vnd.github.raw+json"}};
     const auto changelog = NetworkRequestHelper::HttpGet(
-        QStringLiteral("https://api.github.com/repos/throneproj/Throne/contents/CHANGELOG.md?ref=") +
+        QStringLiteral("https://api.github.com/repos/oviron/Throne/contents/CHANGELOG.md?ref=") +
             QString::fromLatin1(QUrl::toPercentEncoding(release_tag)), options);
     const auto notes = changelog.error.isEmpty() ? releaseNotes(QString::fromUtf8(changelog.data), release_tag) : QString();
 
