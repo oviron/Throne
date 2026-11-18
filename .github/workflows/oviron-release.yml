@@ -9,6 +9,10 @@ on:
       tag:
         description: "Existing tag to release, e.g. 1.4.2-oviron.1; empty builds without publishing"
         required: false
+      macos_runner:
+        description: "Runner of the macOS arm64 build; macos-15-intel cross-builds arm64 when arm64 runners are short"
+        required: false
+        default: macos-latest
 
 env:
   TAG: ${{ github.event_name == 'push' && github.ref_name || inputs.tag }}
@@ -17,7 +21,7 @@ env:
 
 jobs:
   macos-arm64:
-    runs-on: macos-latest
+    runs-on: ${{ inputs.macos_runner || 'macos-latest' }}
     permissions:
       contents: read
     env:
