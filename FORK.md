@@ -8,7 +8,7 @@ change is the TLS fingerprint library of its Xray core: `core/go.mod` replaces
 
 What that means for the fingerprint of Xray-style profiles:
 
-| value | upstream 1.3.2 | this fork |
+| value | upstream 1.4.2 | this fork |
 |---|---|---|
 | `firefox` | Firefox 148 | Firefox 158 |
 | `chrome` | Chrome 133 | Chrome 155 |
@@ -23,7 +23,8 @@ oviron/utls branch built on MetaCubeX v1.9.0 broke Hysteria2 (QUIC fails with
 `missing initial_source_connection_id`), and the sing-box REALITY client removes
 X25519MLKEM768 from any fingerprint anyway.
 
-Two more changes: the updater checks this repository's releases, and
+Two more changes: the updater checks this repository's releases and reads
+version `<upstream>-oviron.<n>` as `<upstream>`, and
 `.github/workflows/oviron-release.yml` builds only macOS arm64 and Windows x64,
 with the steps of upstream's `build.yml` for them. Upstream's `build.yml` is
 disabled in this repository.
@@ -31,7 +32,7 @@ disabled in this repository.
 ## Versions
 
 Branch `oviron` sits on an upstream release tag. A fork release is tagged
-`<upstream>-oviron.<n>` (for example `1.3.2-oviron.3`); pushing the tag builds
+`<upstream>-oviron.<n>` (for example `1.4.2-oviron.1`); pushing the tag builds
 `Throne-<tag>-macos-arm64.zip` and `Throne-<tag>-windows64.zip` and publishes the
 release. The updater compares only the upstream part of the version, so it offers a new
 upstream base but not the next `-oviron.<n>` of the same base.
@@ -46,7 +47,7 @@ macOS arm64 and Windows x64 build steps over to `oviron-release.yml`:
 `git diff OLD NEW -- .github/workflows/build.yml script/` shows them.
 
 ```sh
-export GOTOOLCHAIN=go1.27.0   # the Go of the release workflow
+export GOTOOLCHAIN=go1.27.3   # GO_VERSION of the release workflow
 git fetch upstream --tags
 git rebase --onto NEW OLD oviron
 git checkout NEW -- core/go.mod core/go.sum
