@@ -87,8 +87,15 @@ jobs:
           mkdir build
           cd build
           curl -fLso srslist.h "https://raw.githubusercontent.com/throneproj/routeprofiles/rule-set/srslist.h"
-          cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DNKR_PACKAGE_MACOS=1 -DCMAKE_OSX_DEPLOYMENT_TARGET=14.4 -DCMAKE_OSX_ARCHITECTURES=arm64 ..
+          # On an Intel runner the build tools it runs (spb-protoc) need an x86_64 slice, so build universal and keep arm64.
+          ARCHS=arm64
+          [ "$(uname -m)" = x86_64 ] && ARCHS="arm64;x86_64"
+          cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DNKR_PACKAGE_MACOS=1 -DCMAKE_OSX_DEPLOYMENT_TARGET=14.4 "-DCMAKE_OSX_ARCHITECTURES=$ARCHS" ..
           ninja
+          if [ "$ARCHS" != arm64 ]; then
+            lipo Throne.app/Contents/MacOS/Throne -thin arm64 -output Throne.arm64
+            mv Throne.arm64 Throne.app/Contents/MacOS/Throne
+          fi
           cd ..
           ./script/deploy_macos.sh
       - name: Pack
