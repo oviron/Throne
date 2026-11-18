@@ -37,6 +37,11 @@ Branch `oviron` sits on an upstream release tag. A fork release is tagged
 release. The updater compares only the upstream part of the version, so it offers a new
 upstream base but not the next `-oviron.<n>` of the same base.
 
+When GitHub cannot acquire a macOS arm64 runner (the job is cancelled with no steps
+run), build the existing tag on an Intel runner, which builds universal and thins the
+executable to arm64:
+`gh workflow run oviron-release.yml --ref oviron -f tag=<tag> -f macos_runner=macos-15-intel`.
+
 ## New upstream release
 
 `OLD` is the upstream tag the branch sits on, `NEW` the new one. Upstream bumps
