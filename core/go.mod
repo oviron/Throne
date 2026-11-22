@@ -10,7 +10,7 @@ require (
 	github.com/go-ole/go-ole v1.3.0
 	github.com/gofrs/uuid/v5 v5.5.1
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
-	github.com/klauspost/compress v1.20.1
+	github.com/klauspost/compress v1.20.4
 	github.com/miekg/dns v1.1.73
 	github.com/sagernet/gomobile v0.1.13
 	github.com/sagernet/nftables v0.3.0-mod.4
@@ -224,4 +224,4 @@ replace github.com/sagernet/cronet-go/lib/darwin_amd64 => github.com/throneproj/
 
 replace github.com/sagernet/cronet-go/lib/darwin_arm64 => github.com/throneproj/cronet-go/lib/darwin_arm64 v0.0.0-20260923015522-0dc5a60c5c47
 
-replace github.com/refraction-networking/utls => github.com/oviron/utls v1.8.3-refraction.1
+replace github.com/refraction-networking/utls => github.com/oviron/utls v1.8.3-refraction.2
